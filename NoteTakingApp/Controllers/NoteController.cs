@@ -88,10 +88,10 @@ namespace NoteTakingApp.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Changes the contents of an existing Note, specified by its ID.
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        /// <param name="request">A request object containing the ID of the note and its new content.</param>
+        /// <returns>A Response with HTTP Status code 200 if the note content has been changed, a 404 Response otherwise.</returns>
         [HttpPut("Edit")]
         public IActionResult EditNote([FromForm] EditRequestBody request)
         {
@@ -108,10 +108,10 @@ namespace NoteTakingApp.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Deletes a Note, specified by its ID, from the NoteList collection.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="request">A request object containing the ID of the note in the collection.</param>
+        /// <returns>A Response with HTTP Status code 200 if the note has been deleted, 404 if it could not be found and 500 if it could not be deleted.</returns>
         [HttpDelete("Delete")]
         public IActionResult DeleteNote([FromForm] GetRequestBody request)
         {
@@ -121,7 +121,7 @@ namespace NoteTakingApp.Controllers
                 return NotFound();
             }
 
-            return _noteList.Remove(request.Id) ? Ok() : NotFound();
+            return _noteList.Remove(request.Id) ? Ok() : Problem();
         }
 
         /// <summary>
