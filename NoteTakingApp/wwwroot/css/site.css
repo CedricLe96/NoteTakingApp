@@ -1,0 +1,79 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+    
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* Home */
+
+.notes-controls {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+
+.notes-controls form {
+    padding: 10px;
+}
+
+.notes-controls form #add-note-input {
+    width: calc(100% - 120px);
+    display: inline-block;
+}
+.notes-controls form #add-note-submit {
+    float: right;
+}
+
+.notes-collection {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    column-gap: 20px;
+    row-gap: 20px;
+}
+
+.note .card-header h4 {
+    display: inline-block;
+}
+
+.note .card-header button {
+    float: right;
+    border: none;
+    background: none;
+    font-weight: bold;
+    color: rgba(0,0,0,0.4);
+}
+
+    .note .card-header button.close {
+        font-size: 32px;
+        line-height: 25px;
+    }
+
+    .note .card-header button.edit {
+        font-size: 20px;
+    }
+
+.note .card-header button:hover {
+    color: rgba(0,0,0,0.8);
+}
+
+.note .card-body #note-edit-input {
+    width: calc(100% - 90px);
+    display: inline-block;
+}
+
+.note .card-body #note-edit-submit {
+    float: right;
+}

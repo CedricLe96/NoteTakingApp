@@ -1,0 +1,191 @@
+﻿<div class="notes-container">
+	<div class="card notes-controls">
+		<form id="add-note-form">
+			<input type="text" name="Content" id="add-note-input" class="form-control" placeholder="Hier neue Notiz eintragen ..." />
+			<button type="submit" id="add-note-submit" class="btn btn-outline-primary" disabled>Hinzufügen</button>
+		</form>
+	</div>
+	<div class="notes-collection" id="notes-container">
+
+	</div>
+</div>
+
+<script type="text/html" id="note-template">
+	<div class="card note" data-id="noteId">
+		<div class="card-header">
+			<h4 data-content="title"></h4>
+			<button class="close"><i class="bi bi-x"></i></button>
+			<button class="edit"><i class="bi bi-pencil-fill"></i></button>
+		</div>
+		<div class="card-body" data-content="content">
+
+		</div>
+	</div>
+</script>
+
+<script type="text/html" id="note-edit-template">
+	<form>
+		<input type="hidden" name="Id" data-value="noteId" />
+		<input type="text" name="Content" id="note-edit-input" data-value="content" class="form-control" />
+		<button type="submit" id="note-edit-submit" class="btn btn-outline-primary">Ändern</button>
+	</form>
+</script>
+
+<script>
+	function asyncSubmitAddForm(ev) {
+		// Prevent sending form request
+		ev.preventDefault();
+		const formData = $(ev.target).serialize();
+
+		$("#add-note-input").val("");
+
+		$.ajax("/api/Note/Add", {
+			method: "POST",
+			data: formData,
+			complete: (xhr) => {
+				// Resource created -> successfully created Note
+				if (xhr.status === 201) {
+					const { id, content } = xhr.responseJSON;
+					addNoteToContainer(id, content);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Returns the jQuery object, matching a base note element, of the specified note element (or any of its descendants)
+	 */
+	function getNoteElem(elem) {
+		// Make sure to use jQuery object
+		if (!(elem instanceof jQuery)) {
+			elem = $(elem);
+		}
+
+		if (elem.attr("id") && elem.attr("id").startsWith("note-")) {
+			return elem;
+		}
+
+		const noteElem = $(elem).parents(".note");
+		if (noteElem.length === 0) {
+			return null;
+		}
+
+		return noteElem;
+	}
+
+	/**
+	 * Returns the numeric ID of the specified note (or any of its descendants)
+	 */
+	function getNoteId(elem) {
+		const noteElem = getNoteElem(elem);
+		return parseInt(noteElem.attr("id").replace("note-", ""));
+	}
+
+	function onDeleteNote(ev) {
+		const noteElem = getNoteElem(ev.target);
+		const idNum = getNoteId(noteElem);
+
+		$.ajax("/api/Note/Delete", {
+			method: "DELETE",
+			data: { Id: idNum },
+			success: () => noteElem.remove()
+		});
+	}
+
+	function onEditNote(ev) {
+		const noteElem = $(ev.target).parents(".note");
+		const noteBody = noteElem.find(".card-body");
+
+		// Only if there are no form elements inside the card body (not in edit mode already), should it add one
+		if (noteBody.has("form").length === 0) {
+			const idNum = getNoteId(noteElem);
+			const currentContent = noteBody.text();
+
+			noteBody.loadTemplate(
+				$("#note-edit-template"),
+				{
+					noteId: idNum,
+					content: currentContent
+				}
+			);
+
+			noteBody.find("form").on("submit", asyncSubmitEditForm);
+		}
+	}
+
+	function asyncSubmitEditForm(ev) {
+		// Prevent sending form request
+		ev.preventDefault();
+		const formData = $(ev.target).serialize();
+
+		$.ajax("/api/Note/Edit", {
+			method: "PUT",
+			data: formData,
+			success: () => {
+				const content = $(ev.target).children("#note-edit-input").val();
+				setEditedNoteContent(ev.target, content);
+			}
+		});
+	}
+
+	function setEditedNoteContent(noteElem, content) {
+		if (noteElem) {
+			noteElem = $(noteElem).parents(".note");
+		}
+
+		const noteBody = noteElem.find(".card-body");
+
+		if (noteBody.has("form").length > 0) {
+			noteBody.html(content);
+		}
+	}
+
+	function addNoteToContainer(id, content) {
+		if (typeof id !== "number" || typeof content !== "string") {
+			return;
+		}
+
+		$("#notes-container").loadTemplate(
+			$("#note-template"),
+			{
+				title: "Notiz #" + (id + 1),
+				noteId: "note-" + id,
+				content
+			},
+			{
+				append: true
+			});
+
+		$(`#note-${id} button.close`).on("click", onDeleteNote);
+		$(`#note-${id} button.edit`).on("click", onEditNote);
+	}
+
+	function onNotesReceived(data) {
+		if (!(data instanceof Array)) {
+			return;
+		}
+
+		for (const note of data) {
+			const { id, content } = note;
+			addNoteToContainer(id, content);
+		}
+	}
+
+	$(document).ready(() => {
+		// Enables "Add" button only if input has a value
+		$("#add-note-input").on("input", ev => {
+			$("#add-note-submit").attr("disabled", ev.target.value.length === 0);
+		});
+
+		$("#add-note-form").on("submit", asyncSubmitAddForm);
+
+		$.ajax("/api/Note/GetAll", {
+			method: "GET",
+			success: onNotesReceived,
+			error: () => {
+				location.assign("/Home/Error");
+			}
+		});
+	});
+</script>
+
